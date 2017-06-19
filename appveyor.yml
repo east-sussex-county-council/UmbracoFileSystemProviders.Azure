@@ -15,7 +15,8 @@ build_script:
 - build-appveyor.cmd
 
 before_test:
-- cmd: '"%programfiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start'
+- cmd: '"%programfiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start'
+
 # Turn tests off just now
 test: on
 

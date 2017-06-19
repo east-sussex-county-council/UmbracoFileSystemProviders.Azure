@@ -18,6 +18,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
     using global::Umbraco.Core.IO;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Blob;
+    using global::Umbraco.Web;
 
     /// <summary>
     /// A class for communicating with Azure Blob Storage.
@@ -265,6 +266,8 @@ namespace Our.Umbraco.FileSystemProviders.Azure
                 }
 
                 blockBlob.SetMetadata();
+
+                this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} uploaded file at {path}");
             }
             catch (Exception ex)
             {
@@ -323,6 +326,8 @@ namespace Our.Umbraco.FileSystemProviders.Azure
                             // Can assume its a file aka CloudBlob
                             CloudBlockBlob blobFile = blobItem as CloudBlockBlob;
                             blobFile?.DeleteIfExists(DeleteSnapshotsOption.IncludeSnapshots);
+
+                            this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} deleted file at {path}");
                         }
                     }
                     catch (Exception ex)
@@ -337,6 +342,8 @@ namespace Our.Umbraco.FileSystemProviders.Azure
             // Delete the directory.
             // Force recursive since Azure has no real concept of directories
             this.DeleteDirectory(path, true);
+
+            this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} deleted directory at {path}");
         }
 
         /// <summary>
@@ -359,6 +366,8 @@ namespace Our.Umbraco.FileSystemProviders.Azure
             try
             {
                 blockBlob.DeleteIfExists(DeleteSnapshotsOption.IncludeSnapshots);
+
+                this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} deleted file at {path}");
             }
             catch (Exception ex)
             {
