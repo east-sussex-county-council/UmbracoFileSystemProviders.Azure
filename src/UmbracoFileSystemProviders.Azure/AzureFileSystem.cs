@@ -267,7 +267,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
 
                 blockBlob.SetMetadata();
 
-                this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} uploaded file at {path}");
+                this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current?.Security?.CurrentUser?.Username} uploaded file at {path}");
             }
             catch (Exception ex)
             {
@@ -327,7 +327,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
                             CloudBlockBlob blobFile = blobItem as CloudBlockBlob;
                             blobFile?.DeleteIfExists(DeleteSnapshotsOption.IncludeSnapshots);
 
-                            this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} deleted file at {path}");
+                            this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current?.Security?.CurrentUser?.Username} deleted file at {path}");
                         }
                     }
                     catch (Exception ex)
@@ -343,7 +343,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
             // Force recursive since Azure has no real concept of directories
             this.DeleteDirectory(path, true);
 
-            this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} deleted directory at {path}");
+            this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current?.Security?.CurrentUser?.Username} deleted directory at {path}");
         }
 
         /// <summary>
@@ -367,7 +367,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
             {
                 blockBlob.DeleteIfExists(DeleteSnapshotsOption.IncludeSnapshots);
 
-                this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current.Security.CurrentUser.Username} deleted file at {path}");
+                this.LogHelper.Info<AzureBlobFileSystem>($"{UmbracoContext.Current?.Security?.CurrentUser?.Username} deleted file at {path}");
             }
             catch (Exception ex)
             {
