@@ -48,6 +48,16 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         private const string UsePrivateContainerKey = Constants.Configuration.UsePrivateContainer;
 
         /// <summary>
+        /// The configuration key for determining the container name for Umbraco Forms uploads.
+        /// </summary>
+        private const string ContainerNameKeyForUmbracoFormsUploads = Constants.Configuration.ContainerNameKeyForUmbracoFormsUploads;
+
+        /// <summary>
+        /// The configuration key for determining whether the container for Umbraco Forms uploads should be private.
+        /// </summary>
+        private const string UsePrivateContainerKeyForUmbracoFormsUploads = Constants.Configuration.UsePrivateContainerForUmbracoFormsUploads;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AzureBlobFileSystem"/> class.
         /// </summary>
         /// <param name="containerName">The container name.</param>
@@ -93,8 +103,43 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// <param name="useDefaultRoute">Whether to use the default "media" route in the url independent of the blob container.</param>
         /// <param name="usePrivateContainer">blob container can be private (no direct access) or public (direct access possible, default)</param>
         public AzureBlobFileSystem(string containerName, string rootUrl, string connectionString, string maxDays, string useDefaultRoute, string usePrivateContainer)
+            : this(containerName, rootUrl, connectionString, maxDays, useDefaultRoute, usePrivateContainer, string.Empty, "true")
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureBlobFileSystem" /> class.
+        /// </summary>
+        /// <param name="containerName">The container name.</param>
+        /// <param name="rootUrl">The root url.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <param name="maxDays">The maximum number of days to cache blob items for in the browser.</param>
+        /// <param name="useDefaultRoute">Whether to use the default "media" route in the url independent of the blob container.</param>
+        /// <param name="usePrivateContainer">blob container can be private (no direct access) or public (direct access possible, default)</param>
+        /// <param name="containerNameForUmbracoFormsUploads">The container name for Umbraco Forms uploads.</param>
+        public AzureBlobFileSystem(string containerName, string rootUrl, string connectionString, string maxDays, string useDefaultRoute, string usePrivateContainer, string containerNameForUmbracoFormsUploads)
+            : this(containerName, rootUrl, connectionString, maxDays, useDefaultRoute, usePrivateContainer, containerNameForUmbracoFormsUploads, "true")
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureBlobFileSystem" /> class.
+        /// </summary>
+        /// <param name="containerName">The container name.</param>
+        /// <param name="rootUrl">The root url.</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <param name="maxDays">The maximum number of days to cache blob items for in the browser.</param>
+        /// <param name="useDefaultRoute">Whether to use the default "media" route in the url independent of the blob container.</param>
+        /// <param name="usePrivateContainer">blob container can be private (no direct access) or public (direct access possible, default)</param>
+        /// <param name="containerNameForUmbracoFormsUploads">The container name for Umbraco Forms uploads.</param>
+        /// <param name="usePrivateContainerForUmbracoFormsUploads">blob container for Umbraco Forms uploads can be private (no direct access, default) or public (direct access possible)</param>
+        public AzureBlobFileSystem(string containerName, string rootUrl, string connectionString, string maxDays, string useDefaultRoute, string usePrivateContainer, string containerNameForUmbracoFormsUploads, string usePrivateContainerForUmbracoFormsUploads)
         {
             this.FileSystem = AzureFileSystem.GetInstance(containerName, rootUrl, connectionString, maxDays, useDefaultRoute, usePrivateContainer);
+            if (!string.IsNullOrEmpty(containerNameForUmbracoFormsUploads))
+            {
+                this.FileSystemForUmbracoFormsUploads = AzureFileSystem.GetInstance(containerNameForUmbracoFormsUploads, rootUrl, connectionString, maxDays, useDefaultRoute, usePrivateContainerForUmbracoFormsUploads);
+            }
         }
 
         /// <summary>
@@ -137,7 +182,23 @@ namespace Our.Umbraco.FileSystemProviders.Azure
                     accessType = "true";
                 }
 
+                string containerNameForUmbracoFormsUploads = ConfigurationManager.AppSettings[$"{ContainerNameKeyForUmbracoFormsUploads}:{alias}"];
+                if (string.IsNullOrWhiteSpace(containerNameForUmbracoFormsUploads))
+                {
+                    containerName = string.Empty;
+                }
+
+                string accessTypeForUmbracoFormsUploads = ConfigurationManager.AppSettings[$"{UsePrivateContainerKeyForUmbracoFormsUploads}:{alias}"];
+                if (string.IsNullOrWhiteSpace(accessTypeForUmbracoFormsUploads))
+                {
+                    accessType = "true";
+                }
+
                 this.FileSystem = AzureFileSystem.GetInstance(containerName, rootUrl, connectionString, maxDays, useDefaultRoute, accessType);
+                if (!string.IsNullOrEmpty(containerNameForUmbracoFormsUploads))
+                {
+                    this.FileSystemForUmbracoFormsUploads = AzureFileSystem.GetInstance(containerNameForUmbracoFormsUploads, rootUrl, connectionString, maxDays, useDefaultRoute, accessTypeForUmbracoFormsUploads);
+                }
             }
             else
             {
@@ -149,6 +210,11 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// Gets a singleton instance of the <see cref="AzureFileSystem"/> class.
         /// </summary>
         internal AzureFileSystem FileSystem { get; }
+
+        /// <summary>
+        /// Gets a singleton instance of the <see cref="AzureFileSystem"/> class.
+        /// </summary>
+        internal AzureFileSystem FileSystemForUmbracoFormsUploads { get; }
 
         /// <summary>
         /// Adds a file to the file system.
@@ -164,7 +230,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </param>
         public void AddFile(string path, Stream stream, bool overrideIfExists)
         {
-            this.FileSystem.AddFile(path, stream, overrideIfExists);
+            this.SelectFileSystemForPath(path).AddFile(path, stream, overrideIfExists);
         }
 
         /// <summary>
@@ -178,8 +244,9 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </param>
         public void AddFile(string path, Stream stream)
         {
-            this.FileSystem.AddFile(path, stream);
+            this.SelectFileSystemForPath(path).AddFile(path, stream);
         }
+
 
         /// <summary>
         /// Deletes the specified directory and, if indicated, any subdirectories and files in the directory.
@@ -191,7 +258,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </param>
         public void DeleteDirectory(string path, bool recursive)
         {
-            this.FileSystem.DeleteDirectory(path, recursive);
+            this.SelectFileSystemForPath(path).DeleteDirectory(path, recursive);
         }
 
         /// <summary>
@@ -200,7 +267,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// <param name="path">The name of the directory to remove.</param>
         public void DeleteDirectory(string path)
         {
-            this.FileSystem.DeleteDirectory(path, false);
+            this.SelectFileSystemForPath(path).DeleteDirectory(path, false);
         }
 
         /// <summary>
@@ -209,7 +276,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// <param name="path">The name of the file to remove.</param>
         public void DeleteFile(string path)
         {
-            this.FileSystem.DeleteFile(path);
+            this.SelectFileSystemForPath(path).DeleteFile(path);
         }
 
         /// <summary>
@@ -221,7 +288,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public bool DirectoryExists(string path)
         {
-            return this.FileSystem.DirectoryExists(path);
+            return this.SelectFileSystemForPath(path).DirectoryExists(path);
         }
 
         /// <summary>
@@ -233,7 +300,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public bool FileExists(string path)
         {
-            return this.FileSystem.FileExists(path);
+            return this.SelectFileSystemForPath(path).FileExists(path);
         }
 
         /// <summary>
@@ -245,7 +312,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public DateTimeOffset GetCreated(string path)
         {
-            return this.FileSystem.GetCreated(path);
+            return this.SelectFileSystemForPath(path).GetCreated(path);
         }
 
         /// <summary>
@@ -257,7 +324,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public IEnumerable<string> GetDirectories(string path)
         {
-            return this.FileSystem.GetDirectories(path);
+            return this.SelectFileSystemForPath(path).GetDirectories(path);
         }
 
         /// <summary>
@@ -270,7 +337,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public IEnumerable<string> GetFiles(string path, string filter)
         {
-            return this.FileSystem.GetFiles(path, filter);
+            return this.SelectFileSystemForPath(path).GetFiles(path, filter);
         }
 
         /// <summary>
@@ -282,7 +349,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public IEnumerable<string> GetFiles(string path)
         {
-            return this.FileSystem.GetFiles(path);
+            return this.SelectFileSystemForPath(path).GetFiles(path);
         }
 
         /// <summary>
@@ -294,7 +361,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public string GetFullPath(string path)
         {
-            return this.FileSystem.GetFullPath(path);
+            return this.SelectFileSystemForPath(path).GetFullPath(path);
         }
 
         /// <summary>
@@ -306,7 +373,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public DateTimeOffset GetLastModified(string path)
         {
-            return this.FileSystem.GetLastModified(path);
+            return this.SelectFileSystemForPath(path).GetLastModified(path);
         }
 
         /// <summary>
@@ -318,7 +385,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public string GetRelativePath(string fullPathOrUrl)
         {
-            return this.FileSystem.GetRelativePath(fullPathOrUrl);
+            return this.SelectFileSystemForPath(fullPathOrUrl).GetRelativePath(fullPathOrUrl);
         }
 
         /// <summary>
@@ -331,7 +398,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public string GetUrl(string path)
         {
-            return this.FileSystem.GetUrl(path);
+            return this.SelectFileSystemForPath(path).GetUrl(path);
         }
 
         /// <summary>
@@ -343,7 +410,34 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public Stream OpenFile(string path)
         {
-            return this.FileSystem.OpenFile(path);
+            return this.SelectFileSystemForPath(path).OpenFile(path);
+        }
+
+        /// <summary>
+        /// Determines whether a file path represents an Umbraco Forms upload.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns>
+        ///   <c>true</c> if it is an Umbraco Forms upload; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsUmbracoFormsUpload(string path)
+        {
+            return !string.IsNullOrEmpty(path) && path.StartsWith("forms/upload/");
+        }
+ 
+        /// <summary>
+        /// Selects the correct file system depending on whether the media is an Umbraco Forms upload or not
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns>The appropriate <see cref="AzureFileSystem"/> for the path</returns>
+        private AzureFileSystem SelectFileSystemForPath(string path)
+        {
+            if (this.IsUmbracoFormsUpload(path) && this.FileSystemForUmbracoFormsUploads != null)
+            {
+                return this.FileSystemForUmbracoFormsUploads;
+            }
+
+            return this.FileSystem;
         }
     }
 }
