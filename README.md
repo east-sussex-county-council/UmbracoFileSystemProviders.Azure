@@ -67,6 +67,15 @@ Update `~/Config/FileSystemProviders.config` replacing the default provider with
         When true blob containers will be private instead of public what means that you can't access the original blob file directly from its blob url.
       -->
       <add key="usePrivateContainer" value="false" />
+
+	  <!--
+        When using Umbraco Forms, by default it uploads files to the media folder. If the media folder is a 
+        public container and the forms uploads should be private, the following two settings will redirect
+        Umbraco Forms uploads to a separate, private container. These settings are not required for projects
+        that do not use Umbraco Forms. 
+      -->
+      <add key="containerNameForUmbracoFormsUploads" value="forms-uploads"/>
+	  <add key="usePrivateContainerForUmbracoFormsUploads" value="true" />
     </Parameters>
   </Provider>
 </FileSystemProviders>
@@ -134,6 +143,8 @@ In `Web.config` create the new application keys and post fix each key with the `
 <add key="AzureBlobFileSystem.MaxDays:media" value="365" />
 <add key="AzureBlobFileSystem.UseDefaultRoute:media" value="true" />
 <add key="AzureBlobFileSystem.UsePrivateContainer:media" value="false" />
+<add key="AzureBlobFileSystem.ContainerNameForUmbracoFormsUploads:media" value="forms-uploads" />
+<add key="AzureBlobFileSystem.UsePrivateContainerForUmbracoFormsUploads:media" value="true" />
 ```
 
 ## Virtual Path Provider

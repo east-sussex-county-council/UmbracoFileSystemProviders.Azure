@@ -592,5 +592,38 @@ namespace Our.Umbraco.FileSystemProviders.Azure.Tests
             // Tidy up after test
             provider.DeleteDirectory("forms");
         }
+
+        /// <summary>
+        /// Tests that a file is recognised as an Umbraco Forms upload.
+        /// </summary>
+        [Test]
+        public void TestUmbracoFormsUploadRecognised()
+        {
+            // Arrange
+            AzureBlobFileSystem provider = this.CreateAzureBlobFileSystem();
+
+            // Act
+            var isFormsUpload = provider.IsUmbracoFormsUpload("forms/upload/form_ff4e90c8-a269-4135-81c8-411dc6efc515/e352d1d6-2222-4010-adc2-544ba47679ea/this_is_a_test.csv");
+
+            // Assert
+            Assert.IsTrue(isFormsUpload);
+        }
+
+
+        /// <summary>
+        /// Tests that a file is not incorrectly recognised as an Umbraco Forms upload.
+        /// </summary>
+        [Test]
+        public void TestMediaUploadNotRecognisedAsForms()
+        {
+            // Arrange
+            AzureBlobFileSystem provider = this.CreateAzureBlobFileSystem();
+
+            // Act
+            var isFormsUpload = provider.IsUmbracoFormsUpload("1000/this_is_a_test.csv");
+
+            // Assert
+            Assert.IsTrue(isFormsUpload);
+        }
     }
 }
