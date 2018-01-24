@@ -603,7 +603,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure.Tests
             AzureBlobFileSystem provider = this.CreateAzureBlobFileSystem();
 
             // Act
-            var isFormsUpload = provider.IsUmbracoFormsUpload("forms/upload/form_ff4e90c8-a269-4135-81c8-411dc6efc515/e352d1d6-2222-4010-adc2-544ba47679ea/this_is_a_test.csv");
+            var isFormsUpload = provider.FileSystem.IsUmbracoFormsUpload("forms/upload/form_ff4e90c8-a269-4135-81c8-411dc6efc515/e352d1d6-2222-4010-adc2-544ba47679ea/this_is_a_test.csv");
 
             // Assert
             Assert.IsTrue(isFormsUpload);
@@ -620,10 +620,10 @@ namespace Our.Umbraco.FileSystemProviders.Azure.Tests
             AzureBlobFileSystem provider = this.CreateAzureBlobFileSystem();
 
             // Act
-            var isFormsUpload = provider.IsUmbracoFormsUpload("1000/this_is_a_test.csv");
+            var isFormsUpload = provider.FileSystem.IsUmbracoFormsUpload("1000/this_is_a_test.csv");
 
             // Assert
-            Assert.IsTrue(isFormsUpload);
+            Assert.IsFalse(isFormsUpload);
         }
     }
 }
