@@ -617,7 +617,7 @@ namespace Our.Umbraco.FileSystemProviders.Azure
         /// </returns>
         public bool IsUmbracoFormsUpload(string path)
         {
-            return !string.IsNullOrEmpty(path) && path.StartsWith("forms/upload/");
+            return !string.IsNullOrEmpty(path) && this.FixPath(path).StartsWith("forms/upload/");
         }
 
         /// <summary>
